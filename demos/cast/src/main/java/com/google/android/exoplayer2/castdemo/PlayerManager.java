@@ -16,6 +16,8 @@
 package com.google.android.exoplayer2.castdemo;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.KeyEvent;
 import android.view.View;
 import androidx.annotation.NonNull;
@@ -36,6 +38,8 @@ import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.ui.PlayerControlView;
 import com.google.android.exoplayer2.ui.PlayerView;
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory;
+import com.google.android.exoplayer2.util.Log;
+import com.google.android.gms.cast.MediaQueueItem;
 import com.google.android.gms.cast.framework.CastContext;
 import java.util.ArrayList;
 
@@ -262,7 +266,9 @@ import java.util.ArrayList;
 
   @Override
   public void onCastSessionAvailable() {
-    setCurrentPlayer(castPlayer);
+    // There are a few cast callbacks that come in a bit after this callback, wait for them.
+    new Handler(Looper.getMainLooper())
+        .postDelayed(() -> setCurrentPlayer(castPlayer), 5000);
   }
 
   @Override
@@ -292,6 +298,13 @@ import java.util.ArrayList;
     } else /* currentPlayer == castPlayer */ {
       localPlayerView.setVisibility(View.GONE);
       castControlView.show();
+
+      Timeline timeline = currentPlayer.getCurrentTimeline();
+      Log.d("CastIssue", "Timeline is empty: " + timeline.isEmpty());
+
+      MediaQueueItem currentItem = CastContext.getSharedInstance().getSessionManager()
+          .getCurrentCastSession().getRemoteMediaClient().getCurrentItem();
+      Log.d("CastIssue", "Has active item: " + (currentItem != null));
     }
 
     // Player state management.
